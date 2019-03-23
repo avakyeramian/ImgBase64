@@ -28,6 +28,8 @@ function content()
     }
     
     function getImgForm(){
+        var imgBase64_div = document.getElementById("ImgBase64");
+        
         var form = elemCreate("form",{action:"#",id:"import_form"},"");
         var h2 = elemCreate("h2",{},"Import");
         form.append(h2);
@@ -37,89 +39,66 @@ function content()
         form.append(file_label);
         var file_input = elemCreate("input",{type:"file",id:"file_input",accept:"image/*"},"");
         file_input.onchange = function (event){
-            importHelper(event)
+            var submit_button = document.getElementById("submit_button");
+            submit_button.disabled = false;
         }
         form.append(file_input);
-        var url_label = elemCreate("label",{for:"url_input"},"From an url :");
-        form.append(url_label);
-        var url_input = elemCreate("input",{type:"url",id:"url_input"},"");
-        url_input.onchange = function(event){
-            importHelper(event);
-        }
-        url_input.onkeyup = function(event){
-            importHelper(event);
-        }
-        url_input.onblur = function(event){
-            importHelper(event);
-        }
-        url_input.onpaste = function(event){
-            importHelper(event);
-        }
-        url_input.onclick = function(event){
-            importHelper(event);
-        }
-        form.append(url_input);
-        
         var buttons_div = elemCreate("div",{class:"space-between"},"");
         form.append(buttons_div);
-        var submit_button = elemCreate("button",{type:"button"},"Submit ✔️");
+        var submit_button = elemCreate("button",{type:"button",id:"submit_button",disabled:""},"Submit ✔️");
         submit_button.onclick = function (){
             var form = document.getElementById("import_form");
             var file_input = document.getElementById("file_input");
-            var url_input = document.getElementById("url_input");
-            if ( form.checkValidity() && (file_input.value!=="" || url_input.value!=="")){
+            if ( form.checkValidity() && (file_input.value!=="") ){
                 var image = elemCreate("img",{},"");
-                if(file_input.value!==""){
-                    //console.log("ok file");
-                    image.src = URL.createObjectURL(file_input.files[0]);
-                    //console.log(image);
-                    imgBase64_div.innerHTML = ""; 
-                    setImgForm(image)
-                }else{
-                    //console.log("ok url");
-                    image.src = url_input.value;
-                    //console.log(image);
-                    setImgForm(image)
-                }
-            }else{
-                //console.log("nop");
+                //console.log("ok file");
+                image.src = URL.createObjectURL(file_input.files[0]);
+                //console.log(image);
+                imgBase64_div.innerHTML = ""; 
+                setImgForm(image)
             }
         }
         buttons_div.append(submit_button);
         var clear_button = elemCreate("button",{type:"button"},"Clear ❌");
         clear_button.onclick = function(){
             var file_input = document.getElementById("file_input");
-            var url_input = document.getElementById("url_input");
+            var submit_button = document.getElementById("submit_button");
+            submit_button.disabled = true;
             file_input.value = "";
-            url_input.value = "";
             file_input.disabled = false;
-            url_input.disabled = false;
         }
         buttons_div.append(clear_button);
         
         imgBase64_div.append(form);
     }
     
-    function importHelper(event){
-        var input;
-        if(event.target.id==="url_input"){
-            input = document.getElementById("file_input");
-        }else{
-            input = document.getElementById("url_input");
-        }
-        if(event.target.value !== ""){
-            input.disabled = true;
-        }else{
-            input.disabled = false;
-        }
-    }
-    
     function setImgForm(image){
+        var imgBase64_div = document.getElementById("ImgBase64");
+        
         image.onload = function(){
             //console.log(image);
             imgBase64_div.innerHTML = "";
-            var currentWidth = image.naturalWidth;
-            var currentHeight = image.naturalHeight;
+            var currentWidth,currentHeight,heightByWidth,widthByHeight;
+            if( image.naturalWidth*image.naturalHeight<=2304000 ){
+                //console.log(image.naturalWidth*image.naturalHeight);
+                currentWidth = image.naturalWidth;
+                currentHeight = image.naturalHeight;
+                widthByHeight = currentWidth/currentHeight;
+                heightByWidth = currentHeight/currentWidth;
+            }else{
+                currentWidth = image.naturalWidth;
+                currentHeight = image.naturalHeight;
+                widthByHeight = currentWidth/currentHeight;
+                heightByWidth = currentHeight/currentWidth;
+                
+                do{
+                    currentWidth = currentWidth - 1
+                    currentHeight = Math.round(currentWidth*heightByWidth);
+                    //console.log(currentHeight*currentWidth);
+                }while( (currentWidth*currentHeight)>=2304000 )
+                
+            }
+            
             var widthByHeight = currentWidth/currentHeight;
             var heightByWidth = currentHeight/currentWidth;
             
@@ -130,7 +109,7 @@ function content()
             //form.append(error_div);
             var width_label = elemCreate("label",{for:"width_input"},"Width");
             form.append(width_label);
-            var width_input = elemCreate("input",{type:"number",id:"width_input",value:currentWidth},"");
+            var width_input = elemCreate("input",{type:"number",id:"width_input",value:currentWidth,max:currentWidth},"");
             width_input.onchange = function (event){
                 var height_input = document.getElementById("height_input");
                 var width_input = event.target;
@@ -141,7 +120,7 @@ function content()
             form.append(width_input);
             var height_label = elemCreate("label",{for:"height_input"},"Height");
             form.append(height_label);
-            var height_input = elemCreate("input",{type:"number",id:"height_input",value:currentHeight},"");
+            var height_input = elemCreate("input",{type:"number",id:"height_input",value:currentHeight,max:currentHeight},"");
             height_input.onchange = function (event){
                 var width_input = document.getElementById("width_input");
                 var height_input = event.target;
@@ -191,6 +170,9 @@ function content()
     }
 
     function finish(base64){
+        var imgBase64_div = document.getElementById("ImgBase64");
+        
+        //console.log(base64);
         imgBase64_div.innerHTML = "";
         var rawBase64 = base64.replace(/^data:image\/(png|jpg);base64,/, "");
         var h2 = elemCreate("h2",{},"Finished");
@@ -205,13 +187,6 @@ function content()
         var img = elemCreate("img",{src:base64,alt:"base64image",id:"base64image"},"");
         a.append(img);
         imgBase64_div.append(a);
-        /*
-        var copy_button = elemCreate("button",{id:"copy"},"Copy Base64");
-        copy_button.onclick = function (){
-            copy(rawBase64);
-        }
-        imgBase64_div.append(copy_button);
-        */
     }
     
     function convertImageToBase64Resize(image,width,height){
@@ -220,7 +195,6 @@ function content()
         canvas.width = width;
         //canvas.height = image.naturalHeight;
         canvas.height = height;
-
         var ctx = canvas.getContext("2d");
         ctx.drawImage(image, 0, 0,width,height);
 
