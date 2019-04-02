@@ -171,15 +171,12 @@ function content()
 
     function finish(base64){
         var imgBase64_div = document.getElementById("ImgBase64");
-        
-        //console.log(base64);
         imgBase64_div.innerHTML = "";
-        var rawBase64 = base64.replace(/^data:image\/(png|jpg);base64,/, "");
         var h2 = elemCreate("h2",{},"Finished");
         imgBase64_div.append(h2);
         var code_h3 = elemCreate("h3",{},"Text");
         imgBase64_div.append(code_h3);
-        var code = elemCreate("code",{class:"code-base64"},rawBase64);
+        var code = elemCreate("code",{class:"code-base64"},base64);
         imgBase64_div.append(code);
         var img_h3 = elemCreate("h3",{},"Preview");
         imgBase64_div.append(img_h3);
